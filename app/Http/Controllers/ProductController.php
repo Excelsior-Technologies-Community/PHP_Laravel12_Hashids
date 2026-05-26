@@ -4,46 +4,54 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
-use Vinkla\Hashids\Facades\Hashids;
 
 class ProductController extends Controller
 {
-    // LIST
     public function index()
     {
-        $products = Product::all()->map(function ($product) {
-            $product->hashid = Hashids::encode($product->id);
-            return $product;
-        });
+        $products = Product::all();
 
         return view('products.index', compact('products'));
     }
 
-    // CREATE FORM
     public function create()
     {
         return view('products.create');
     }
 
-    // STORE
     public function store(Request $request)
     {
-        Product::create($request->only('name', 'price'));
+        $request->validate([
+            'name' => 'required',
+            'description' => 'nullable',
+            'price' => 'required|numeric',
+        ]);
+
+        Product::create($request->all());
 
         return redirect('/products');
     }
 
-    // SHOW (HASHID URL)
-    public function show($hash)
+    public function show(Product $product)
     {
-        $id = Hashids::decode($hash)[0] ?? null;
-
-        if (!$id) {
-            abort(404);
-        }
-
-        $product = Product::findOrFail($id);
-
         return view('products.show', compact('product'));
+    }
+
+    public function edit(Product $product)
+    {
+        return view('products.edit', compact('product'));
+    }
+
+    public function update(Request $request, Product $product)
+    {
+        $request->validate([
+            'name' => 'required',
+            'description' => 'nullable',
+            'price' => 'required|numeric',
+        ]);
+
+        $product->update($request->all());
+
+        return redirect('/products');
     }
 }
